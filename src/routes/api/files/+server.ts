@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   
   const path = url.searchParams.get('path') || '/';
   
-  const result = await listDirectory(path, locals.fileRoot);
+  const result = await listDirectory(path, locals.fileRoot, locals.user);
   
   if (!result) {
     throw error(403, 'Access denied or invalid path');

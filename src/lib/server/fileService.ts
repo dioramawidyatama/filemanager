@@ -1,7 +1,7 @@
 import { readdir, stat } from 'fs/promises';
 import path from 'path';
 import type { FileNode, DirectoryListing } from '$lib/types';
-import { sanitizePath, getRelativePath } from './pathUtils';
+import { sanitizePath, getRelativePath, canListDirectory, auditLog } from './pathUtils';
 
 /**
  * Get MIME type from filename
@@ -37,18 +37,36 @@ function getMimeType(filename: string): string {
  */
 export async function listDirectory(
   userPath: string, 
-  rootPath: string
+  rootPath: string,
+  user?: { username: string } | null
 ): Promise<DirectoryListing | null> {
-  const fullPath = sanitizePath(userPath, rootPath);
-  if (!fullPath) return null;
+  const fullPath = sanitizePath(userPath, rootPath, user);
+  if (!fullPath) {
+    auditLog('LIST_DIR', user?.username || null, userPath, false, 'path_sanitization_failed');
+    return null;
+  }
+  
+  // Additional safety check for directory listing
+  if (!canListDirectory(userPath, rootPath, user)) {
+    auditLog('LIST_DIR', user?.username || null, userPath, false, 'directory_not_allowed');
+    return null;
+  }
   
   try {
     const entries = await readdir(fullPath, { withFileTypes: true });
     const files: FileNode[] = [];
     
     for (const entry of entries) {
-      // Skip hidden files
+      // Skip hidden files (starting with .)
       if (entry.name.startsWith('.')) continue;
+      
+      // Skip blocked directories
+      if (entry.isDirectory()) {
+        const dirName = entry.name.toLowerCase();
+        if (['.ssh', '.gnupg', 'memory', 'backups', 'logs', 'config', '.git', 'node_modules'].includes(dirName)) {
+          continue;
+        }
+      }
       
       const entryPath = path.join(fullPath, entry.name);
       const relativePath = getRelativePath(entryPath, rootPath);
@@ -72,12 +90,15 @@ export async function listDirectory(
       return a.name.localeCompare(b.name);
     });
     
+    auditLog('LIST_DIR', user?.username || null, userPath, true, `found_${files.length}_files`);
+    
     return {
       path: getRelativePath(fullPath, rootPath),
       files,
     };
   } catch (error) {
     console.error('Failed to list directory:', error);
+    auditLog('LIST_DIR', user?.username || null, userPath, false, `error_${(error as Error).message}`);
     return null;
   }
 }
@@ -87,15 +108,21 @@ export async function listDirectory(
  */
 export async function getFileInfo(
   userPath: string,
-  rootPath: string
+  rootPath: string,
+  user?: { username: string } | null
 ): Promise<FileNode | null> {
-  const fullPath = sanitizePath(userPath, rootPath);
-  if (!fullPath) return null;
+  const fullPath = sanitizePath(userPath, rootPath, user);
+  if (!fullPath) {
+    auditLog('FILE_INFO', user?.username || null, userPath, false, 'path_sanitization_failed');
+    return null;
+  }
   
   try {
     const fileStat = await stat(fullPath);
     const relativePath = getRelativePath(fullPath, rootPath);
     const filename = path.basename(fullPath);
+    
+    auditLog('FILE_INFO', user?.username || null, userPath, true, 'success');
     
     return {
       id: Buffer.from(relativePath).toString('base64url'),
@@ -108,6 +135,7 @@ export async function getFileInfo(
       mimeType: fileStat.isFile() ? getMimeType(filename) : undefined,
     };
   } catch (error) {
+    auditLog('FILE_INFO', user?.username || null, userPath, false, `error_${(error as Error).message}`);
     return null;
   }
 }

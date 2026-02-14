@@ -1,7 +1,12 @@
-<script>
+<script lang="ts">
   import '../app.css';
   
-  export let data;
+  interface Props {
+    data: { user: { id: string; username: string; fingerprint: string } | null };
+    children: import('svelte').Snippet;
+  }
+  
+  let { data, children }: Props = $props();
 </script>
 
 {#if data.user}
@@ -31,9 +36,9 @@
     
     <!-- Main Content -->
     <main class="flex-1 overflow-hidden">
-      <slot />
+      {@render children()}
     </main>
   </div>
 {:else}
-  <slot />
+  {@render children()}
 {/if}

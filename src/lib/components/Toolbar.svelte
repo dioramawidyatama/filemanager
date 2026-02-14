@@ -1,28 +1,24 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { viewMode, selectedFiles, currentPath } from '$lib/stores';
-  
-  const dispatch = createEventDispatcher();
-  
-  function setView(mode: 'grid' | 'list') {
-    viewMode.set(mode);
-    dispatch('viewChange', mode);
+  interface Props {
+    currentPath: string;
+    selectedCount: number;
+    viewMode: 'grid' | 'list';
+    onRefresh: () => void;
+    onViewChange: (mode: 'grid' | 'list') => void;
   }
   
-  function handleRefresh() {
-    dispatch('refresh');
-  }
+  let { currentPath, selectedCount, viewMode, onRefresh, onViewChange }: Props = $props();
 </script>
 
 <div class="flex items-center justify-between gap-4 px-4 py-3 bg-slate-800 border-b border-slate-700">
   <!-- Left: Path info -->
   <div class="flex items-center gap-2 min-w-0">
     <h2 class="text-sm font-medium text-slate-300 truncate hidden sm:block">
-      {$currentPath === '/' ? 'Home' : $currentPath}
+      {currentPath === '/' ? 'Home' : currentPath}
     </h2>
-    {#if $selectedFiles.size > 0}
+    {#if selectedCount > 0}
       <span class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
-        {$selectedFiles.size} selected
+        {selectedCount} selected
       </span>
     {/if}
   </div>
@@ -32,7 +28,7 @@
     <!-- Refresh -->
     <button 
       class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-      on:click={handleRefresh}
+      onclick={onRefresh}
       title="Refresh"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,8 +39,8 @@
     <!-- View toggle -->
     <div class="flex items-center bg-slate-700 rounded-lg p-1">
       <button 
-        class="p-1.5 rounded transition-colors {$viewMode === 'grid' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}"
-        on:click={() => setView('grid')}
+        class="p-1.5 rounded transition-colors {viewMode === 'grid' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}"
+        onclick={() => onViewChange('grid')}
         title="Grid view"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,8 +51,8 @@
         </svg>
       </button>
       <button 
-        class="p-1.5 rounded transition-colors {$viewMode === 'list' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}"
-        on:click={() => setView('list')}
+        class="p-1.5 rounded transition-colors {viewMode === 'list' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}"
+        onclick={() => onViewChange('list')}
         title="List view"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

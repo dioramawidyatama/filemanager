@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { FileNode } from '$lib/types';
   
-  export let files: FileNode[];
-  export let selected: Set<string>;
+  interface Props {
+    files: FileNode[];
+    selectedFiles: Set<string>;
+    onFileClick: (file: FileNode) => void;
+    onSelect: (selected: Set<string>) => void;
+  }
   
-  const dispatch = createEventDispatcher();
+  let { files, selectedFiles, onFileClick, onSelect }: Props = $props();
   
   function formatSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -25,15 +28,15 @@
   
   function handleClick(file: FileNode, event: MouseEvent) {
     if (event.ctrlKey || event.metaKey) {
-      const newSelected = new Set(selected);
+      const newSelected = new Set(selectedFiles);
       if (newSelected.has(file.path)) {
         newSelected.delete(file.path);
       } else {
         newSelected.add(file.path);
       }
-      dispatch('select', newSelected);
+      onSelect(newSelected);
     } else {
-      dispatch('click', file);
+      onFileClick(file);
     }
   }
   
@@ -62,8 +65,8 @@
     {#each files as file (file.id)}
       <button
         class="w-full grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_100px_150px_50px] gap-3 sm:gap-4 px-4 py-3 items-center text-left transition-colors
-          {selected.has(file.path) ? 'bg-blue-600/10' : 'hover:bg-slate-750'}"
-        on:click={(e) => handleClick(file, e)}
+          {selectedFiles.has(file.path) ? 'bg-blue-600/10' : 'hover:bg-slate-750'}"
+        onclick={(e) => handleClick(file, e)}
       >
         <!-- Icon -->
         <div class="w-5 h-5 flex items-center justify-center">
@@ -107,7 +110,7 @@
         
         <!-- Selection indicator -->
         <div class="flex justify-center">
-          {#if selected.has(file.path)}
+          {#if selectedFiles.has(file.path)}
             <div class="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
               <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>

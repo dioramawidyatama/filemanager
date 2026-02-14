@@ -11,18 +11,14 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - FILE_ROOT=/data
-      - AUTHORIZED_KEYS_PATH=/data/.ssh/authorized_keys
+      - FILE_ROOT=/home/opc/clawd
+      - AUTHORIZED_KEYS_PATH=/home/opc/.ssh/authorized_keys
     volumes:
-      - filemanager-data:/data
-      - ~/.ssh/authorized_keys:/data/.ssh/authorized_keys:ro
+      - /home/opc/clawd:/home/opc/clawd:ro
+      - /home/opc/.ssh/authorized_keys:/home/opc/.ssh/authorized_keys:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/login"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-volumes:
-  filemanager-data:
-    driver: local

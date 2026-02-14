@@ -1,34 +1,42 @@
-# FileManager
+# FileManager v2.0
 
-A modern, web-based file manager with SSH key authentication. Built with SvelteKit (full-stack) and Tailwind CSS.
+A modern, web-based file manager with SSH key authentication. Built with **SvelteKit 5** (full-stack) and **Tailwind CSS 4**.
 
 ## Features
 
 - 🔐 **SSH Key Authentication** - Secure login using SSH public keys from authorized_keys
 - 📁 **File Browser** - Grid and list views with responsive design
-- 🛡️ **Path Security** - Blocks traversal attacks and sensitive file access
+- 🛡️ **Path Security** - Blocks traversal attacks, sensitive files, and restricted directories
 - 📱 **Mobile First** - Responsive Tailwind CSS design
-- ⚡ **Fast** - SvelteKit with server-side rendering
+- ⚡ **Fast** - SvelteKit 5 with runes and server-side rendering
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────┐
-│           SvelteKit                 │
+│         SvelteKit 5                 │
 │    (Full-Stack Node.js Adapter)     │
 │                                     │
 │  ┌──────────────┐ ┌──────────────┐ │
 │  │   Frontend   │ │   API Routes │ │
-│  │   (Svelte)   │ │   (Server)   │ │
+│  │   (Svelte 5) │ │   (Server)   │ │
 │  └──────────────┘ └──────────────┘ │
 └─────────────────────────────────────┘
            │
            ▼
     ┌──────────────┐
-    │   File Root  │
-    │   (/data)    │
+    │  File Root   │
+    │(/home/opc/   │
+    │   clawd)     │
     └──────────────┘
 ```
+
+## Tech Stack
+
+- **Svelte 5** - Latest version with runes ($state, $derived, $effect)
+- **SvelteKit 2.x** - Full-stack framework with Node.js adapter
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **Node.js 20** - Runtime
 
 ## Quick Start
 
@@ -63,28 +71,56 @@ npm run dev
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Server port |
-| `FILE_ROOT` | `/data` | Root directory for files |
-| `AUTHORIZED_KEYS_PATH` | `/data/.ssh/authorized_keys` | Path to authorized_keys file |
+| `FILE_ROOT` | `/home/opc/clawd` | Root directory for files **(CRITICAL)** |
+| `AUTHORIZED_KEYS_PATH` | `/home/opc/.ssh/authorized_keys` | Path to authorized_keys file |
 | `NODE_ENV` | `development` | Environment mode |
-
-## Authentication
-
-Users authenticate by pasting their SSH public key. The key is validated against the `authorized_keys` file using MD5 fingerprint matching.
-
-Supported key formats:
-- `ssh-rsa`
-- `ssh-ed25519`
-- `ssh-ecdsa`
-- `ssh-dss`
 
 ## Security
 
-- ✅ SSH key authentication (no passwords)
-- ✅ Path traversal protection
-- ✅ Blocked sensitive paths (/etc, /proc, .ssh, etc.)
-- ✅ Blocked sensitive files (.env, private keys)
-- ✅ Session-based authentication with httpOnly cookies
-- ✅ CSRF protection via SameSite cookies
+### Path Restrictions
+
+**Root Directory:** `/home/opc/clawd`
+
+**Blocked Directories:**
+- `.ssh/` - SSH keys
+- `.gnupg/` - GPG keys
+- `memory/` - Personal data
+- `backups/` - Database backups
+- `logs/` - Log files
+- `config/` - Configuration files
+- Hidden files (starting with `.`)
+
+**Blocked Files:**
+- `authorized_keys`, `.env`, private keys
+- Any file containing: secrets, credentials, password, token, apikey
+
+**Allowed Directories:**
+- `projects/` - Read-write
+- `docs/` - Read-write
+- `src/` - Read-write
+- `resources/` - Read-write
+
+### Authentication
+
+Users authenticate by pasting their SSH public key. The key is validated against the `authorized_keys` file using MD5 fingerprint matching.
+
+**Session Token Format:**
+```
+base64url(fingerprint_no_colons:timestamp)
+```
+
+**Cookie Settings:**
+- `httpOnly: true` - Prevents XSS access
+- `secure: false` - Works over HTTP in development
+- `sameSite: 'lax'` - CSRF protection
+- `maxAge: 30 days`
+
+### Audit Logging
+
+All file operations are logged:
+```
+[AUDIT] 2024-01-01T00:00:00.000Z | SUCCESS | LIST_DIR | user=username | path=/projects
+```
 
 ## Project Structure
 
@@ -92,9 +128,9 @@ Supported key formats:
 filemanager/
 ├── src/
 │   ├── lib/
-│   │   ├── components/     # Svelte components
+│   │   ├── components/     # Svelte 5 components (runes)
 │   │   ├── server/         # Server utilities
-│   │   ├── stores.ts       # Svelte stores
+│   │   ├── stores.ts       # State management
 │   │   └── types.ts        # TypeScript types
 │   ├── routes/
 │   │   ├── api/            # API endpoints
@@ -102,19 +138,46 @@ filemanager/
 │   │   ├── +page.svelte    # Main file manager
 │   │   └── +layout.svelte  # App layout
 │   ├── hooks.server.ts     # Auth hooks
-│   └── app.html
+│   └── app.css             # Tailwind CSS v4
 ├── Dockerfile
 ├── docker-compose.yml
+├── svelte.config.js        # Svelte 5 config
 └── package.json
+```
+
+## Svelte 5 Migration
+
+All components use Svelte 5 runes:
+
+```typescript
+// State
+let count = $state(0);
+
+// Derived
+let doubled = $derived(count * 2);
+
+// Effects
+$effect(() => {
+  console.log('Count changed:', count);
+});
+
+// Props
+interface Props {
+  data: { files: FileNode[] };
+}
+let { data }: Props = $props();
 ```
 
 ## Development Tasks
 
-- [x] Scaffold SvelteKit project with Node.js adapter
-- [x] Setup SSH key authentication
-- [x] Implement path sanitization
-- [x] Build file listing API
-- [x] Create mobile-responsive layout
+- [x] SvelteKit project with Node.js adapter
+- [x] SSH key authentication
+- [x] Path sanitization with strict rules
+- [x] File listing API with audit logging
+- [x] Mobile-responsive layout
+- [x] **Svelte 5 migration**
+- [x] **FILE_ROOT = /home/opc/clawd**
+- [x] **Security hardening**
 
 ## License
 

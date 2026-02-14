@@ -69,6 +69,7 @@ export async function verifySSHKey(
 /**
  * Generate a session token from SSH key
  * Stores fingerprint (without colons) + timestamp for later verification
+ * Format: base64url(fingerprint_no_colons:timestamp)
  */
 export function generateSessionToken(key: string): string {
   const parsed = parseSSHKey(key);

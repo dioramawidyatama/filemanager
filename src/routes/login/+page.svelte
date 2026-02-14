@@ -1,10 +1,14 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   
-  export let form;
+  interface Props {
+    form?: { error?: string };
+  }
   
-  let sshKey = '';
-  let isSubmitting = false;
+  let { form }: Props = $props();
+  
+  let sshKey = $state('');
+  let isSubmitting = $state(false);
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-slate-900 p-4">

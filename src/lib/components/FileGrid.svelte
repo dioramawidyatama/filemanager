@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { FileNode } from '$lib/types';
   
-  export let files: FileNode[];
-  export let selected: Set<string>;
+  interface Props {
+    files: FileNode[];
+    selectedFiles: Set<string>;
+    onFileClick: (file: FileNode) => void;
+    onSelect: (selected: Set<string>) => void;
+  }
   
-  const dispatch = createEventDispatcher();
+  let { files, selectedFiles, onFileClick, onSelect }: Props = $props();
   
   function formatSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -15,27 +18,19 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
   
-  function formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString(undefined, { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  }
-  
   function handleClick(file: FileNode, event: MouseEvent) {
     if (event.ctrlKey || event.metaKey) {
       // Toggle selection
-      const newSelected = new Set(selected);
+      const newSelected = new Set(selectedFiles);
       if (newSelected.has(file.path)) {
         newSelected.delete(file.path);
       } else {
         newSelected.add(file.path);
       }
-      dispatch('select', newSelected);
+      onSelect(newSelected);
     } else {
       // Navigate or open
-      dispatch('click', file);
+      onFileClick(file);
     }
   }
   
@@ -54,10 +49,10 @@
   {#each files as file (file.id)}
     <button
       class="group relative flex flex-col items-center p-4 rounded-xl transition-all duration-200
-        {selected.has(file.path) 
+        {selectedFiles.has(file.path) 
           ? 'bg-blue-600/20 border-2 border-blue-500' 
           : 'bg-slate-800 border-2 border-transparent hover:bg-slate-750 hover:border-slate-600'}"
-      on:click={(e) => handleClick(file, e)}
+      onclick={(e) => handleClick(file, e)}
     >
       <!-- File Icon -->
       <div class="w-16 h-16 mb-3 flex items-center justify-center">
@@ -97,7 +92,7 @@
       </span>
       
       <!-- Selection indicator -->
-      {#if selected.has(file.path)}
+      {#if selectedFiles.has(file.path)}
         <div class="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
           <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>

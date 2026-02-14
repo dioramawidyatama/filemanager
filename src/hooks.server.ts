@@ -31,7 +31,8 @@ async function getUserByFingerprint(fingerprint: string, authorizedKeysPath: str
 export const handle: Handle = async ({ event, resolve }) => {
   // Set configuration from environment
   event.locals.authorizedKeysPath = process.env.AUTHORIZED_KEYS_PATH || '/home/opc/.ssh/authorized_keys';
-  event.locals.fileRoot = process.env.FILE_ROOT || '/home/opc/files';
+  // CRITICAL: Root directory is /home/opc/clawd
+  event.locals.fileRoot = process.env.FILE_ROOT || '/home/opc/clawd';
   
   // Check for SSH key authentication
   const authHeader = event.request.headers.get('authorization');

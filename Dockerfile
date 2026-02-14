@@ -24,13 +24,13 @@ COPY --from=builder /app/package*.json ./
 # Install production dependencies only
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Create data directory
-RUN mkdir -p /data
+# Create data directory and set permissions
+RUN mkdir -p /home/opc/clawd && chmod 755 /home/opc/clawd
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV FILE_ROOT=/data
-ENV AUTHORIZED_KEYS_PATH=/data/.ssh/authorized_keys
+ENV FILE_ROOT=/home/opc/clawd
+ENV AUTHORIZED_KEYS_PATH=/home/opc/.ssh/authorized_keys
 
 EXPOSE 3000
 
