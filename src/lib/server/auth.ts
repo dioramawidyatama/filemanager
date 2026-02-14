@@ -68,26 +68,32 @@ export async function verifySSHKey(
 
 /**
  * Generate a session token from SSH key
- * Stores fingerprint + timestamp for later verification
+ * Stores fingerprint (without colons) + timestamp for later verification
  */
 export function generateSessionToken(key: string): string {
   const parsed = parseSSHKey(key);
   if (!parsed) throw new Error('Invalid SSH key');
   
-  // Create a session token that includes the fingerprint
+  // Create a session token - remove colons from fingerprint since they conflict with delimiter
   const timestamp = Date.now();
-  const data = `${parsed.fingerprint}:${timestamp}`;
+  const fingerprintNoColons = parsed.fingerprint.replace(/:/g, '');
+  const data = `${fingerprintNoColons}:${timestamp}`;
   return Buffer.from(data).toString('base64url');
 }
 
 /**
  * Extract fingerprint from session token
+ * Returns fingerprint WITH colons (MD5 format)
  */
 export function extractFingerprintFromToken(token: string): string | null {
   try {
     const decoded = Buffer.from(token, 'base64url').toString('utf-8');
     const parts = decoded.split(':');
-    return parts[0] || null;
+    const fingerprintNoColons = parts[0];
+    if (!fingerprintNoColons) return null;
+    
+    // Add colons back to make it MD5 fingerprint format
+    return fingerprintNoColons.match(/.{2}/g)?.join(':') || null;
   } catch {
     return null;
   }
