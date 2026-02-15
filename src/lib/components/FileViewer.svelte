@@ -8,16 +8,19 @@
     content: string | null;
     language: string;
     onClose: () => void;
+    onSave?: (content: string) => Promise<void>;
   }
   
-  let { file, content, language, onClose }: Props = $props();
+  let { file, content, language, onClose, onSave }: Props = $props();
   
   let isLoading = $state(false);
   let copySuccess = $state(false);
+  let isEditMode = $state(false);
+  let currentContent = $state(content || '');
+  let saveError = $state('');
   
   // Determine file type from extension or language
   function getFileType(filename: string, lang: string): 'code' | 'markdown' | 'image' | 'binary' {
-    // Check language first (from API)
     if (lang === 'markdown') return 'markdown';
     
     const ext = filename.split('.').pop()?.toLowerCase() || '';
@@ -30,6 +33,7 @@
   }
   
   const fileType = $derived(getFileType(file.name, language));
+  const isEditable = $derived(fileType === 'code' && onSave);
   
   // Format file size
   function formatSize(bytes: number): string {
@@ -60,11 +64,39 @@
   
   // Copy content
   async function copyContent() {
-    if (content) {
-      await navigator.clipboard.writeText(content);
-      copySuccess = true;
-      setTimeout(() => copySuccess = false, 2000);
+    const textToCopy = isEditMode ? currentContent : (content || '');
+    await navigator.clipboard.writeText(textToCopy);
+    copySuccess = true;
+    setTimeout(() => copySuccess = false, 2000);
+  }
+  
+  // Toggle edit mode
+  function toggleEditMode() {
+    if (isEditMode) {
+      // Cancel edit - reset content
+      currentContent = content || '';
     }
+    isEditMode = !isEditMode;
+    saveError = '';
+  }
+  
+  // Handle save
+  async function handleSave(newContent: string) {
+    if (!onSave) return;
+    
+    saveError = '';
+    try {
+      await onSave(newContent);
+      currentContent = newContent;
+      isEditMode = false;
+    } catch (err) {
+      saveError = (err as Error).message || 'Save failed';
+    }
+  }
+  
+  // Handle content change in editor
+  function handleContentChange(newContent: string) {
+    currentContent = newContent;
   }
   
   // Large file warning threshold (2MB)
@@ -114,6 +146,25 @@
       
       <!-- Actions -->
       <div class="flex items-center gap-3">
+        {#if isEditable}
+          <button 
+            class="px-4 py-2 text-sm {isEditMode ? 'bg-slate-600 hover:bg-slate-500' : 'bg-green-600 hover:bg-green-500'} text-white rounded-lg transition-colors flex items-center gap-2"
+            onclick={toggleEditMode}
+          >
+            {#if isEditMode}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Cancel
+            {:else}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Edit
+            {/if}
+          </button>
+        {/if}
+        
         {#if content && fileType !== 'image'}
           <button 
             class="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors flex items-center gap-2"
@@ -154,6 +205,16 @@
       </div>
     </div>
     
+    <!-- Save Error -->
+    {#if saveError}
+      <div class="px-6 py-3 bg-red-500/10 border-b border-red-500/30 flex items-center gap-3">
+        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span class="text-sm text-red-400">{saveError}</span>
+      </div>
+    {/if}
+    
     <!-- Large File Warning -->
     {#if isLargeFile}
       <div class="px-6 py-3 bg-yellow-500/10 border-b border-yellow-500/30 flex items-center gap-3">
@@ -168,8 +229,15 @@
     
     <!-- Content Area -->
     <div class="flex-1 overflow-hidden p-4">
-      {#if fileType === 'code' && content}
-        <CodeViewer {content} {language} filename={file.name} />
+      {#if fileType === 'code'}
+        <CodeViewer 
+          content={currentContent} 
+          {language} 
+          filename={file.name} 
+          readOnly={!isEditMode}
+          onSave={handleSave}
+          onContentChange={handleContentChange}
+        />
       {:else if fileType === 'markdown' && content}
         <MarkdownPreview {content} filename={file.name} />
       {:else if fileType === 'image'}
