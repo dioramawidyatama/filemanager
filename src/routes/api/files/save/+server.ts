@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { sanitizePath, getRelativePath, auditLog } from '$lib/server/pathUtils';
+import { createVersion, isAutoVersionEnabled, generateChecksum } from '$lib/server/database';
 
 // Max content size: 10MB
 const MAX_CONTENT_SIZE = 10 * 1024 * 1024;
@@ -28,6 +29,9 @@ const BLOCKED_EXTENSIONS = [
   '.7z',
 ];
 
+// Min size for auto-versioning (500 bytes)
+const MIN_VERSION_SIZE = 500;
+
 export const PUT: RequestHandler = async ({ request, locals }) => {
   // Check authentication
   if (!locals.user) {
@@ -35,7 +39,7 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
   }
   
   try {
-    const { path: filePath, content } = await request.json();
+    const { path: filePath, content, commitMessage } = await request.json();
     
     if (!filePath || typeof filePath !== 'string') {
       throw error(400, 'Path is required');
@@ -70,6 +74,23 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
     
     const relativePath = getRelativePath(fullPath, path.resolve(locals.fileRoot));
     
+    // Auto-create version if enabled and file is large enough
+    let versionId: number | undefined;
+    if (contentSize >= MIN_VERSION_SIZE && isAutoVersionEnabled(filePath)) {
+      try {
+        const version = createVersion(
+          filePath,
+          content,
+          locals.user.username,
+          commitMessage || `Auto-save: ${new Date().toISOString()}`
+        );
+        versionId = version.id;
+      } catch (err) {
+        console.error('Auto-versioning failed:', err);
+        // Don't fail the save if versioning fails
+      }
+    }
+    
     auditLog('SAVE', locals.user?.username || null, filePath, true, `size_${contentSize}`);
     
     return json({
@@ -77,6 +98,7 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
       message: 'File saved successfully',
       path: relativePath,
       size: contentSize,
+      versionId,
     });
     
   } catch (err) {
