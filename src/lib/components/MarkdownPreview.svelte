@@ -105,86 +105,140 @@
 
 <style>
   .markdown-body :global(h1) {
-    @apply text-2xl font-bold text-white mb-4 pb-2 border-b border-slate-700;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #334155;
   }
   
   .markdown-body :global(h2) {
-    @apply text-xl font-semibold text-white mt-6 mb-3 pb-2 border-b border-slate-700;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #334155;
   }
   
   .markdown-body :global(h3) {
-    @apply text-lg font-semibold text-slate-200 mt-4 mb-2;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
   }
   
-  .markdown-body :global(h4, h5, h6) {
-    @apply font-semibold text-slate-300 mt-3 mb-2;
+  .markdown-body :global(h4),
+  .markdown-body :global(h5),
+  .markdown-body :global(h6) {
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
   }
   
   .markdown-body :global(p) {
-    @apply mb-4 leading-relaxed;
+    margin-bottom: 1rem;
+    line-height: 1.625;
   }
   
   .markdown-body :global(a) {
-    @apply text-blue-400 hover:text-blue-300 underline;
+    color: #60a5fa;
+    text-decoration: underline;
   }
   
-  .markdown-body :global(ul, ol) {
-    @apply mb-4 pl-6;
+  .markdown-body :global(a:hover) {
+    color: #93c5fd;
   }
   
   .markdown-body :global(ul) {
-    @apply list-disc;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    list-style-type: disc;
   }
   
   .markdown-body :global(ol) {
-    @apply list-decimal;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    list-style-type: decimal;
   }
   
   .markdown-body :global(li) {
-    @apply mb-1;
+    margin-bottom: 0.25rem;
   }
   
   .markdown-body :global(code) {
-    @apply bg-slate-800 text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono;
+    background-color: #1e293b;
+    color: #e2e8f0;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: monospace;
   }
   
   .markdown-body :global(pre) {
-    @apply bg-slate-800 p-4 rounded-lg overflow-x-auto mb-4;
+    background-color: #1e293b;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
   }
   
   .markdown-body :global(pre code) {
-    @apply bg-transparent p-0;
+    background-color: transparent;
+    padding: 0;
   }
   
   .markdown-body :global(blockquote) {
-    @apply border-l-4 border-blue-500 pl-4 py-1 my-4 bg-slate-800/50;
+    border-left: 4px solid #3b82f6;
+    padding-left: 1rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    background-color: rgba(30, 41, 59, 0.5);
   }
   
   .markdown-body :global(table) {
-    @apply w-full border-collapse mb-4;
-  }
-  
-  .markdown-body :global(th, td) {
-    @apply border border-slate-700 px-3 py-2 text-left;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
   }
   
   .markdown-body :global(th) {
-    @apply bg-slate-800 font-semibold text-slate-200;
+    border: 1px solid #334155;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    background-color: #1e293b;
+    font-weight: 600;
+    color: #e2e8f0;
   }
   
   .markdown-body :global(td) {
-    @apply text-slate-300;
+    border: 1px solid #334155;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    color: #cbd5e1;
   }
   
   .markdown-body :global(hr) {
-    @apply border-slate-700 my-6;
+    border-color: #334155;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
   }
   
   .markdown-body :global(img) {
-    @apply max-w-full rounded-lg;
+    max-width: 100%;
+    border-radius: 0.5rem;
   }
   
   .markdown-body :global(.highlight) {
-    @apply bg-yellow-500/20 px-1 rounded;
+    background-color: rgba(234, 179, 8, 0.2);
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    border-radius: 0.25rem;
   }
 </style>

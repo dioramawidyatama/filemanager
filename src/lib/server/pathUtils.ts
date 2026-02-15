@@ -77,12 +77,20 @@ const BLOCKED_FILE_PATTERNS = [
   /private/i,
 ];
 
-// Allowed directories under the root
-const ALLOWED_DIRECTORIES = [
-  'projects',
-  'docs',
-  'src',
-  'resources',
+// Allowed directories under the root - allow all except blocked
+const BLOCKED_TOP_LEVEL_DIRECTORIES = [
+  '.ssh',
+  '.gnupg',
+  'memory',
+  'backups',
+  'logs',
+  'config',
+  '.git',
+  '.svn',
+  '.hg',
+  'node_modules',
+  '.npm',
+  '.pnpm-store',
 ];
 
 /**
@@ -112,7 +120,7 @@ function isBlockedFilename(filename: string): boolean {
 
 /**
  * Check if path is within allowed directories
- * If path is root or within allowed directories, it's permitted
+ * Root and most directories are allowed, only blocked ones are restricted
  */
 function isInAllowedDirectory(relativePath: string): boolean {
   // Root is allowed
@@ -125,8 +133,8 @@ function isInAllowedDirectory(relativePath: string): boolean {
   
   const firstDir = parts[0].toLowerCase();
   
-  // Check if first directory is in allowed list
-  return ALLOWED_DIRECTORIES.includes(firstDir);
+  // Check if first directory is blocked
+  return !BLOCKED_TOP_LEVEL_DIRECTORIES.includes(firstDir);
 }
 
 /**

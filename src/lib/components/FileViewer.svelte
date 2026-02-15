@@ -15,8 +15,11 @@
   let isLoading = $state(false);
   let copySuccess = $state(false);
   
-  // Determine file type from extension
-  function getFileType(filename: string): 'code' | 'markdown' | 'image' | 'binary' {
+  // Determine file type from extension or language
+  function getFileType(filename: string, lang: string): 'code' | 'markdown' | 'image' | 'binary' {
+    // Check language first (from API)
+    if (lang === 'markdown') return 'markdown';
+    
     const ext = filename.split('.').pop()?.toLowerCase() || '';
     
     if (['md', 'mdx'].includes(ext)) return 'markdown';
@@ -26,7 +29,7 @@
     return 'binary';
   }
   
-  const fileType = $derived(getFileType(file.name));
+  const fileType = $derived(getFileType(file.name, language));
   
   // Format file size
   function formatSize(bytes: number): string {
