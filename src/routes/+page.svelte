@@ -42,6 +42,7 @@
   // Upload state
   let uploadInput: HTMLInputElement;
   let isUploading = $state(false);
+  let isDragOver = $state(false);
   
   // Derived state
   let selectedCount = $derived(selectedFiles.size);
@@ -233,6 +234,11 @@
     
     if (!filesList || filesList.length === 0) return;
     
+    await uploadFiles(filesList);
+    input.value = '';
+  }
+  
+  async function uploadFiles(filesList: FileList) {
     isUploading = true;
     
     const formData = new FormData();
@@ -258,7 +264,46 @@
       console.error('Upload failed:', error);
     } finally {
       isUploading = false;
-      input.value = '';
+    }
+  }
+  
+  // Drag & Drop Handlers
+  function handleDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = true;
+  }
+  
+  function handleDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = false;
+  }
+  
+  async function handleDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver = false;
+    
+    const items = event.dataTransfer?.items;
+    if (!items) return;
+    
+    const filesToUpload: File[] = [];
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          filesToUpload.push(file);
+        }
+      }
+    }
+    
+    if (filesToUpload.length > 0) {
+      const dataTransfer = new DataTransfer();
+      filesToUpload.forEach(f => dataTransfer.items.add(f));
+      await uploadFiles(dataTransfer.files);
     }
   }
   
@@ -266,7 +311,6 @@
     if (renamingFile?.id === file.id) return;
     
     if (event.ctrlKey || event.metaKey) {
-      // Toggle selection handled in child
       return;
     }
     
@@ -286,14 +330,30 @@
     {viewMode}
     onRefresh={handleRefresh}
     onViewChange={handleViewChange}
+    onCreateFile={() => openCreateModal('file')}
+    onCreateFolder={() => openCreateModal('folder')}
+    onUpload={triggerUpload}
   />
   
   <!-- Breadcrumb -->
   <Breadcrumb path={currentPath} onNavigate={handleNavigate} />
   
-  <!-- File Browser -->
-  <div class="flex-1 overflow-auto p-4 scrollbar-thin" oncontextmenu={(e) => handleContextMenu(e, null)}>
-    {#if isLoading || isUploading}
+  <!-- File Browser with Drag & Drop -->
+  <div 
+    class="flex-1 overflow-auto p-4 scrollbar-thin transition-colors {isDragOver ? 'bg-blue-500/10 border-2 border-blue-500 border-dashed' : ''}"
+    oncontextmenu={(e) => handleContextMenu(e, null)}
+    ondragover={handleDragOver}
+    ondragleave={handleDragLeave}
+    ondrop={handleDrop}
+  >
+    {#if isDragOver}
+      <div class="flex flex-col items-center justify-center h-full text-blue-400 pointer-events-none">
+        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <p class="text-lg font-medium">Drop files here to upload</p>
+      </div>
+    {:else if isLoading || isUploading}
       <div class="flex items-center justify-center h-full">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         <span class="ml-3 text-slate-400">{isUploading ? 'Uploading...' : 'Loading...'}</span>
@@ -304,7 +364,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
         <p class="text-lg font-medium">This folder is empty</p>
-        <p class="text-sm mt-1">Right-click to create files or folders</p>
+        <p class="text-sm mt-1">Drag & drop files here or use the buttons above</p>
       </div>
     {:else}
       {#if viewMode === 'grid'}
