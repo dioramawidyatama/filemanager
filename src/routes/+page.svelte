@@ -4,6 +4,7 @@
   import FileList from '$lib/components/FileList.svelte';
   import Breadcrumb from '$lib/components/Breadcrumb.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
+  import FileViewer from '$lib/components/FileViewer.svelte';
   import type { FileNode } from '$lib/types';
   
   interface Props {
@@ -18,6 +19,13 @@
   let viewMode = $state<'grid' | 'list'>('grid');
   let selectedFiles = $state<Set<string>>(new Set());
   let isLoading = $state(false);
+  
+  // File viewer state
+  let showViewer = $state(false);
+  let selectedFile = $state<FileNode | null>(null);
+  let fileContent = $state<string | null>(null);
+  let fileLanguage = $state<string>('plaintext');
+  let isLoadingContent = $state(false);
   
   // Derived state
   let selectedCount = $derived(selectedFiles.size);
@@ -43,9 +51,12 @@
     loadFiles(path);
   }
   
-  function handleFileClick(file: FileNode) {
+  async function handleFileClick(file: FileNode) {
     if (file.type === 'directory') {
       loadFiles(file.path);
+    } else {
+      // Open file viewer
+      await openFileViewer(file);
     }
   }
   
@@ -59,6 +70,48 @@
   
   function handleViewChange(mode: 'grid' | 'list') {
     viewMode = mode;
+  }
+  
+  async function openFileViewer(file: FileNode) {
+    selectedFile = file;
+    showViewer = true;
+    isLoadingContent = true;
+    fileContent = null;
+    fileLanguage = 'plaintext';
+    
+    try {
+      const response = await fetch(`/api/files/content?path=${encodeURIComponent(file.path)}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        fileLanguage = result.language || 'plaintext';
+        
+        if (result.type === 'text') {
+          fileContent = result.content;
+        } else if (result.type === 'image') {
+          fileContent = null; // Images use raw endpoint
+        } else {
+          fileContent = null; // Binary files
+        }
+      } else if (response.status === 413) {
+        // File too large
+        fileContent = null;
+      } else {
+        console.error('Failed to load file content');
+        fileContent = null;
+      }
+    } catch (error) {
+      console.error('Error loading file:', error);
+      fileContent = null;
+    } finally {
+      isLoadingContent = false;
+    }
+  }
+  
+  function closeViewer() {
+    showViewer = false;
+    selectedFile = null;
+    fileContent = null;
   }
 </script>
 
@@ -108,3 +161,13 @@
     {/if}
   </div>
 </div>
+
+<!-- File Viewer Modal -->
+{#if showViewer && selectedFile}
+  <FileViewer 
+    file={selectedFile}
+    content={fileContent}
+    language={fileLanguage}
+    onClose={closeViewer}
+  />
+{/if}
